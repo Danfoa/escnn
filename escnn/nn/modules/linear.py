@@ -163,9 +163,10 @@ class Linear(EquivariantModule):
         self._basisexpansion = None
         
         if basisexpansion == 'blocks':
-            self._basisexpansion = BlocksBasisExpansion(in_type.representations, out_type.representations,
-                                                        self.space.build_fiber_intertwiner_basis,
-                                                        np.zeros((1, 1)),
+            self._basisexpansion = BlocksBasisExpansion(in_reprs=in_type.representations,
+                                                        out_reprs=out_type.representations,
+                                                        basis_generator=self.space.build_fiber_intertwiner_basis,
+                                                        points=np.zeros((1, 1)),
                                                         recompute=recompute)
 
         else:

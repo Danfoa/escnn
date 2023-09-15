@@ -29,7 +29,7 @@ from .nonlinearities import GatedNonLinearityUniform
 from .nonlinearities import InducedGatedNonLinearity1
 from .nonlinearities import NormNonLinearity
 from .nonlinearities import InducedNormNonLinearity
-from .nonlinearities import PointwiseNonLinearity
+from .nonlinearities import PointwiseNonLinearity, Tanh
 from .nonlinearities import ConcatenatedNonLinearity
 from .nonlinearities import VectorFieldNonLinearity
 from .nonlinearities import ReLU
@@ -111,6 +111,7 @@ __all__ = [
     "ReLU",
     "ELU",
     "LeakyReLU",
+    "Tanh",
     "FourierPointwise",
     "FourierELU",
     "QuotientFourierPointwise",

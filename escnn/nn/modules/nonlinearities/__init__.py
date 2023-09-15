@@ -1,7 +1,7 @@
 
 from .norm import NormNonLinearity
 from .induced_norm import InducedNormNonLinearity
-from .pointwise import PointwiseNonLinearity
+from .pointwise import *
 from .concatenated import ConcatenatedNonLinearity
 from .gated1 import GatedNonLinearity1, GATES_ID, GATED_ID
 from .gated2 import GatedNonLinearity2
@@ -22,6 +22,7 @@ __all__ = [
     "NormNonLinearity",
     "InducedNormNonLinearity",
     "PointwiseNonLinearity",
+    "Tanh",
     "ConcatenatedNonLinearity",
     "GatedNonLinearity1",
     "GatedNonLinearity2",

@@ -55,7 +55,7 @@ class BlocksBasisExpansion(torch.nn.Module, BasisManager):
         self.points = points
         
         # int: number of points where the filters are sampled
-        self.S = self.points.shape[0]
+        self.num_filters = self.points.shape[0]
 
         # we group the basis vectors by their input and output representations
         _block_expansion_modules = {}
@@ -302,7 +302,7 @@ class BlocksBasisExpansion(torch.nn.Module, BasisManager):
             self._in_count[io_pair[0]],
             o,
             i,
-            self.S,
+            self.num_filters,
         )
         _filter = _filter.transpose(1, 2)
         return _filter
@@ -312,22 +312,23 @@ class BlocksBasisExpansion(torch.nn.Module, BasisManager):
         Forward step of the Module which expands the basis and returns the filter built
 
         Args:
-            weights (torch.Tensor): the learnable weights used to linearly combine the basis filters
+            weights (torch.Tensor): the learnable weights used to linearly combine the basis filters. The shape of this
+            tensor should be (num_filters, dim_basis_space), or (dim_basis_space,). num_filters is the number of filters
+            to return.
 
         Returns:
-            the filter built
-
+            A tensor of shape (out_dim, in_dim, num_filters)
         """
-        assert weights.shape[0] == self.dimension()
-        assert len(weights.shape) == 1
-    
+        assert weights.shape[-1] == self.dimension()
+        assert len(weights.shape) < 2, f"Weights shape need be (num_filters, dim_basis_space), or (dim_basis_space,)"
+
         if self._n_pairs == 1:
             # if there is only one block (i.e. one type of input field and one type of output field),
             #  we can return the expanded block immediately, instead of copying it inside a preallocated empty tensor
             io_pair = self._representations_pairs[0]
             in_indices = getattr(self, f"in_indices_{self._escape_pair(io_pair)}")
             out_indices = getattr(self, f"out_indices_{self._escape_pair(io_pair)}")
-            _filter = self._expand_block(weights, io_pair).reshape(out_indices[2], in_indices[2], self.S)
+            _filter = self._expand_block(weights, io_pair).reshape(out_indices[2], in_indices[2], self.num_filters)
             
         else:
 
@@ -351,7 +352,7 @@ class BlocksBasisExpansion(torch.nn.Module, BasisManager):
                     # build the tensor which will contain the filter
                     # this lazy strategy allows us to use expanded.dtype which is dynamically chosen by PyTorch's AMP
                     _filter = torch.zeros(
-                        self._output_size, self._input_size, self.S, device=weights.device, dtype=expanded.dtype
+                        self._output_size, self._input_size, self.num_filters, device=weights.device, dtype=expanded.dtype
                     )
 
                 if self._contiguous[io_pair]:
@@ -359,19 +360,19 @@ class BlocksBasisExpansion(torch.nn.Module, BasisManager):
                         out_indices[0]:out_indices[1],
                         in_indices[0]:in_indices[1],
                         :,
-                    ] = expanded.reshape(out_indices[2], in_indices[2], self.S)
+                    ] = expanded.reshape(out_indices[2], in_indices[2], self.num_filters)
                 else:
                     _filter[
                         out_indices,
                         in_indices,
                         :,
-                    ] = expanded.reshape(-1, self.S)
+                    ] = expanded.reshape(-1, self.num_filters)
 
             # just in case
             if _filter is None:
                 # build the tensor which will contain the filter
                 _filter = torch.zeros(
-                    self._output_size, self._input_size, self.S, device=weights.device, dtype=weights.dtype
+                    self._output_size, self._input_size, self.num_filters, device=weights.device, dtype=weights.dtype
                 )
 
         # return the new filter

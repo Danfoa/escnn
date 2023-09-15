@@ -102,14 +102,14 @@ class EquivariantModule(Module, ABC):
         # for el in self.out_type.testing_elements:
         for _ in range(20):
             el = self.in_type.gspace.fibergroup.sample()
-            print(el)
+            # print(el)
             
             out1 = self(x).transform(el).tensor.detach().numpy()
             out2 = self(x.transform(el)).tensor.detach().numpy()
         
             errs = out1 - out2
             errs = np.abs(errs).reshape(-1)
-            print(el, errs.max(), errs.mean(), errs.var())
+            # print(el, errs.max(), errs.mean(), errs.var())
         
             assert np.allclose(out1, out2, atol=atol, rtol=rtol), \
                 'The error found during equivariance check with element "{}" is too high: max = {}, mean = {} var ={}'\

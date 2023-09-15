@@ -12,7 +12,7 @@ from typing import List, Tuple, Any
 
 import numpy as np
 
-__all__ = ["PointwiseNonLinearity"]
+__all__ = ["PointwiseNonLinearity", "Tanh"]
 
 
 class PointwiseNonLinearity(EquivariantModule):
@@ -114,3 +114,17 @@ class PointwiseNonLinearity(EquivariantModule):
             errors.append((el, errs.mean()))
     
         return errors
+
+
+class Tanh(PointwiseNonLinearity):
+
+    def __int__(self, in_type: FieldType):
+        r"""
+
+        Applies the hyperbolic tangent function to the input fields.
+
+        Args:
+            in_type (FieldType): the input field type
+        """
+
+        super(Tanh, self).__init__(in_type, function='p_tanh')

@@ -1067,7 +1067,9 @@ def direct_sum_factory(irreps: List[escnn.group.IrreducibleRepresentation],
 
 def homomorphism_space(rho1: Representation, rho2: Representation) -> np.ndarray:
     r"""
-        Compute a basis for the space of homomorphisms from `rho1` to `rho2`.
+        Compute a basis for the space of homomorphisms from `rho1` to `rho2`. To do this, we compute the
+        basis of the homomorphism between pairs of input/output irreps of `rho1` and `rho2`. By Schurs' Lemma, the only
+        non-empty homomorphisms between two irreps are the ones of equivalent irreps.
 
         .. warning::
             This basis might become quite big for large representations and, therefore, this method might get
@@ -1090,27 +1092,35 @@ def homomorphism_space(rho1: Representation, rho2: Representation) -> np.ndarray
                 dim += in_irrep.sum_of_squares_constituents
     
     basis = np.zeros((dim, rho2.size, rho1.size))
-    
-    p = 0
-    i = 0
+
+    # Here we apply Schurs' Lemma, stating that the space of endomorphisms between two irreps that are not equivalent to
+    # each other is the empty space (the zero matrix/map). Therefore, we only need to compute the basis of endomorphisms
+    # for the set of pairwise equivalent irreps from the input and output irreps.
+    # Thus, any matrix in the endomorphism space has a block structure. Consequently, so does the basis of the space.
+    # Here, we compute the basis of each of these blocks, and appropriately stack them to form the basis of the space.
+    p = 0            # Dimensions/Degrees-of-freedom of the endomorphism space.
+    vec_in_dim = 0   # Counter of the input vector space dimension
     for in_irrep in rho1.irreps:
         in_irrep = G.irrep(*in_irrep)
         
-        j = 0
+        vec_out_dim = 0    # Counter of the output vector space dimension
         for out_irrep in rho2.irreps:
             out_irrep = G.irrep(*out_irrep)
             
-            if out_irrep == in_irrep:
+            if out_irrep == in_irrep:  # This block endomorphism space is non-empty.
                 basis[
                     p:p + in_irrep.sum_of_squares_constituents,
-                    j:j + in_irrep.size,
-                    i:i + in_irrep.size
+                    vec_out_dim:vec_out_dim + in_irrep.size,
+                    vec_in_dim:vec_in_dim + in_irrep.size
                 ] = in_irrep.endomorphism_basis()
-                
-                p += in_irrep.sum_of_squares_constituents
+
+                p += in_irrep.sum_of_squares_constituents    # Add the dimensions of the block endomorphism
             
-            j += out_irrep.size
-        i += in_irrep.size
-    
+            vec_out_dim += out_irrep.size
+        vec_in_dim += in_irrep.size
+
+    # The basis of endomorphisms is computed from a canonical basis of the input/output representations vect spaces
+    # in which representations become block-diagonal sums of irreps. We have to come back to the basis specified by
+    # the user for the input and output representations. This einop [github.com/arogozhnikov/einops] does this.
     basis = np.einsum('Mm,kmn,nN->kMN', rho2.change_of_basis, basis, rho1.change_of_basis_inv)
     return basis
